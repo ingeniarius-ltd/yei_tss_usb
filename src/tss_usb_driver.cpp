@@ -139,7 +139,8 @@ namespace yei_tss_usb
 		reset_srv = nh_priv.advertiseService( "reset", &TSSUSB::ResetCB, this );
 		factory_srv = nh_priv.advertiseService( "restore_factory_settings", &TSSUSB::FactoryCB, this );
 		led_color_srv = nh_priv.advertiseService( "set_led_color", &TSSUSB::LEDColorCB, this );
-
+                
+                ros::Duration(0.05).sleep();
 		return true;
 	}
 
