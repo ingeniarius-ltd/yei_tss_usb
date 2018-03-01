@@ -60,7 +60,8 @@ namespace yei_tss_usb
 	public:
 		TSSUSB( const ros::NodeHandle &_nh = ros::NodeHandle( ),
 			const ros::NodeHandle &_nh_priv = ros::NodeHandle( "~" ),
-			const std::string _port = "/dev/ttyACM0" );
+			const std::string _port = "/dev/ttyACM0",
+                        const double frequency = 100.0);
 		~TSSUSB( );
 		bool TSSOpen( );
 		void TSSClose( );
@@ -93,6 +94,7 @@ namespace yei_tss_usb
 		ros::NodeHandle nh_priv;
 		std::string port;
 		std::string frame_id;
+                double frequency;
 		int tssd;
 		boost::mutex cmd_lock;
 

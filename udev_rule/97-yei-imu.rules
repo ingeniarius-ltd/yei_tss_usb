@@ -1,0 +1,1 @@
+SUBSYSTEM=="tty", ATTRS{idVendor}=="2476", ATTRS{idProduct}=="1040", MODE:="0777" SYMLINK+="yei_imu", GROUP="dialout"

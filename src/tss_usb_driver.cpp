@@ -12,27 +12,28 @@ namespace yei_tss_usb
 {
 	TSSUSB::TSSUSB( const ros::NodeHandle &_nh,
 		const ros::NodeHandle &_nh_priv,
-		const std::string _port ) :
+		const std::string _port,
+                double frequency) :
 		nh( _nh ),
 		nh_priv( _nh_priv ),
 		port( _port ),
-		frame_id( "imu" ),
+		frame_id( "base_link" ),
 		tssd( -1 ),
 		min_update_rate( 50.0 ),
 		max_update_rate( 230.0 ),
 		diag_pub_freq( diagnostic_updater::FrequencyStatusParam( &min_update_rate, &max_update_rate, 0.1, 10 ) ),
 		io_failure_count( 0 ),
 		open_failure_count( 0 ),
-		axis_config( TSS_USB_AXIS_YZX ),
+		/*axis_config( TSS_USB_AXIS_YZX ),
 		invert_x_axis( false ),
 		invert_y_axis( true ),
 		invert_z_axis( false ),
-		reference_vector_mode( 1 ),
-		orientation_covariance( 0.1 ),
+		reference_vector_mode( 1 ),*/
+		orientation_covariance( 0.01 ),
 		angular_velocity_covariance( 0.1 ),
 		linear_acceleration_covariance( 0.1 ),
-		grav_vect( 0, 0, GRAVITATIONAL_ACCELERATION ),
-		spin_rate( 100 ),
+		//grav_vect( 0, 0, GRAVITATIONAL_ACCELERATION ),
+		spin_rate( frequency ),
 		spin_thread( &TSSUSB::spin, this )
 	{
 		cmd_lock.unlock( );
@@ -40,8 +41,10 @@ namespace yei_tss_usb
 		diag.add( "YEI TSS Status", this, &TSSUSB::DiagCB );
 		diag.add( diag_pub_freq );
 
-		nh_priv.param( "frame_id", frame_id, (std::string)"imu" );
-		std::string temp_axis_config;
+		nh_priv.param( "frame_id", frame_id, (std::string)"base_link" );
+                
+                //DP: ACCEPT calibration values instead (and include gravity acceleration):
+		/*std::string temp_axis_config;
 		nh_priv.param( "axis_config", temp_axis_config, (std::string)"yzx" );
 		axis_config = str_to_tss_axis( temp_axis_config.c_str( ) );
 		nh_priv.param( "invert_x_axis", invert_x_axis, false );
@@ -59,10 +62,11 @@ namespace yei_tss_usb
 		ROS_ASSERT( temp_gravity_vector[2].getType() == XmlRpc::XmlRpcValue::TypeDouble );
 		grav_vect = tf::Vector3( temp_gravity_vector[0], temp_gravity_vector[1], temp_gravity_vector[2] );
 		nh_priv.param( "reference_vector_mode", reference_vector_mode, 1 );
-		ROS_ASSERT( reference_vector_mode >= 0 && reference_vector_mode <= 3 );
-		nh_priv.param( "orientation_covariance", orientation_covariance, 0.0 );
-		nh_priv.param( "angular_velocity_covariance", angular_velocity_covariance, 0.0 );
-		nh_priv.param( "linear_acceleration_covariance", linear_acceleration_covariance, 0.0 );
+		ROS_ASSERT( reference_vector_mode >= 0 && reference_vector_mode <= 3 );*/
+                
+		nh_priv.param( "orientation_covariance", orientation_covariance, 0.1 );
+		nh_priv.param( "angular_velocity_covariance", angular_velocity_covariance, 0.1 );
+		nh_priv.param( "linear_acceleration_covariance", linear_acceleration_covariance, 0.1 );
 		nh_priv.param( "temperature_variance", temperature_variance, 0.0 );
 		nh_priv.param( "magnetic_field_covariance", magnetic_field_covariance, 0.0 );
 	}
@@ -114,7 +118,8 @@ namespace yei_tss_usb
 			return false;
 		}
 
-		if( tss_set_axis_directions( tssd, axis_config | ( invert_x_axis ? TSS_USB_INVERT_X : 0 )
+                //DP: Assume IMU already configured in the official sensor suite:
+		/*if( tss_set_axis_directions( tssd, axis_config | ( invert_x_axis ? TSS_USB_INVERT_X : 0 )
 			| ( invert_y_axis ? TSS_USB_INVERT_Y : 0 ) | ( invert_z_axis ? TSS_USB_INVERT_Z : 0 ) ) < 0 )
 		{
 			TSSCloseNoLock( );
@@ -127,7 +132,7 @@ namespace yei_tss_usb
 			TSSCloseNoLock( );
 			io_failure_count++;
 			return false;
-		}
+		}*/
 
 		diag.setHardwareIDf( "YEI TSS on %s", port.c_str( ) );
 
@@ -227,6 +232,23 @@ namespace yei_tss_usb
 			io_failure_count++;
 			return;
 		}
+		
+		/**DP: GET COVARIANCES FROM KALMAN :: This command doesn't work in YEI Embedded **/
+                /*float vals[16];
+                ROS_INFO("calling cov function");
+                if( ( ret = tss_get_covariance( tssd, vals ) ) < 0 ){
+                        TSSCloseNoLock( );
+			cmd_lock.unlock( );
+			io_failure_count++;
+                        ROS_INFO("shit");
+			return;    
+                }
+                
+                for (ret=0; ret<16; ret++){
+                    ROS_INFO("vals[%d]=%f", ret,vals[ret]);
+                }*/
+                /** ************************************** **/
+
 
 		cmd_lock.unlock( );
 
@@ -246,10 +268,10 @@ namespace yei_tss_usb
 
 		tf::Quaternion orient;
 		tf::quaternionMsgToTF( msg->orientation, orient );
-		const tf::Vector3 tmp_grav_vect = tf::quatRotate( orient.inverse( ), grav_vect );
-		msg->linear_acceleration.x = -GRAVITATIONAL_ACCELERATION * accel[0] + tmp_grav_vect.x( );
-		msg->linear_acceleration.y = -GRAVITATIONAL_ACCELERATION * accel[1] + tmp_grav_vect.y( );
-		msg->linear_acceleration.z = -GRAVITATIONAL_ACCELERATION * accel[2] + tmp_grav_vect.z( );
+		//const tf::Vector3 tmp_grav_vect = tf::quatRotate( orient.inverse( ), grav_vect ); /**DP: include gravity**/
+		msg->linear_acceleration.x = -GRAVITATIONAL_ACCELERATION * accel[0]; //+ tmp_grav_vect.x( );
+		msg->linear_acceleration.y = -GRAVITATIONAL_ACCELERATION * accel[1]; //+ tmp_grav_vect.y( );
+		msg->linear_acceleration.z = -GRAVITATIONAL_ACCELERATION * accel[2]; //+ tmp_grav_vect.z( );
 
 		/* Dummy Values */
 		msg->orientation_covariance[0] = orientation_covariance;

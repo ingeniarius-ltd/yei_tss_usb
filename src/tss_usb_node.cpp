@@ -62,9 +62,11 @@ int main( int argc, char *argv[] )
 	ros::NodeHandle nh_priv( "~" );
 
 	std::string port;
+        double frequency;
 	nh_priv.param( "port", port, (const std::string)"/dev/ttyACM0" );
+        nh_priv.param( "frequency", frequency, 100.0 );
 
-	yei_tss_usb::TSSUSB tss( nh, nh_priv, port );
+	yei_tss_usb::TSSUSB tss( nh, nh_priv, port, frequency );
 
 	ROS_DEBUG( "Opening TSS device on %s", port.c_str( ) );
 	if( !tss.TSSOpen( ) )
