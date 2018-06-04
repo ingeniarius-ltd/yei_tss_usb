@@ -115,7 +115,9 @@ namespace yei_tss_usb
 		 */
 		diagnostic_updater::FrequencyStatus diag_pub_freq;
 
-		ros::Publisher imu_pub;
+                ros::Publisher imu_pub;
+		//ros::Publisher imu_pub_rel;
+                //ros::Publisher imu_pub_abs;
 		ros::Publisher temp_pub;
 		ros::Publisher mag_pub;
 		ros::ServiceServer tare_srv;

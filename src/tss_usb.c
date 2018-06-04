@@ -11,7 +11,7 @@
 * referenced with an integer handle.
 *
 * \section license License (BSD-3)
-* Copyright (c) 2013, Scott K Logan\n
+* Copyright (c) 2013, Scott K Logan
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -58,7 +58,10 @@
 
 enum tss_usb_commands
 {
-	CMD_READ_FILTERED_TARED_ORIENTATION_QUATERNION = 0x00,
+	CMD_READ_FILTERED_TARED_ORIENTATION_QUATERNION = 0x00,   //relative orientation
+        CMD_READ_FILTERED_UNTARED_ORIENTATION_QUATERNION = 0x06, //absolute orientation
+        CMD_READ_UNTARED_NORTH_VECTOR_GLOBAL_FRAME = 0x0A,
+        CMD_READ_UNTARED_NORTH_VECTOR_SENSOR_FRAME = 0x0C,
 	CMD_READ_NORMALIZED_GYROS = 0x21,
 	CMD_READ_NORMALIZED_ACCELEROMETER = 0x22,
 	CMD_READ_CORRECTED_ACCELEROMETER = 0x27,
@@ -385,6 +388,93 @@ int tss_get_orientation_quaternion( const int tssd, float vals[4] )
 
 	return TSS_USB_SUCCESS;
 }
+
+
+int tss_get_absolute_orientation_quaternion( const int tssd, float vals[4] )
+{
+	#ifndef NO_FLUSH_BUFFER
+	// Clear Response Buffer
+	tcflush( tss_usb_list[tssd]->fd, TCIOFLUSH );
+	#endif
+
+	// Construct Packet Payload
+	unsigned char buf[3] = { CMD_HEADER, CMD_READ_FILTERED_UNTARED_ORIENTATION_QUATERNION, CMD_READ_FILTERED_UNTARED_ORIENTATION_QUATERNION };
+	int ret;
+
+	if( ( ret = send_cmd( tss_usb_list[tssd]->fd, buf, sizeof( buf ) ) ) < 0 )
+		return ret;
+
+	// Read Response
+	if( ( ret = read_data( tss_usb_list[tssd]->fd, (unsigned char *)vals, 4 * sizeof( float ) ) ) < 0 )
+		return ret;
+
+	endian_swap( (unsigned int *)&vals[0] );
+	endian_swap( (unsigned int *)&vals[1] );
+	endian_swap( (unsigned int *)&vals[2] );
+	endian_swap( (unsigned int *)&vals[3] );
+
+	return TSS_USB_SUCCESS;
+}
+
+
+
+int tss_get_north_vector_global ( const int tssd, float vals[6] )
+{
+	#ifndef NO_FLUSH_BUFFER
+	// Clear Response Buffer
+	tcflush( tss_usb_list[tssd]->fd, TCIOFLUSH );
+	#endif
+
+	// Construct Packet Payload
+	unsigned char buf[3] = { CMD_HEADER, CMD_READ_UNTARED_NORTH_VECTOR_GLOBAL_FRAME, CMD_READ_UNTARED_NORTH_VECTOR_GLOBAL_FRAME };
+	int ret;
+
+	if( ( ret = send_cmd( tss_usb_list[tssd]->fd, buf, sizeof( buf ) ) ) < 0 )
+		return ret;
+
+	// Read Response
+	if( ( ret = read_data( tss_usb_list[tssd]->fd, (unsigned char *)vals, 6 * sizeof( float ) ) ) < 0 )
+		return ret;
+
+	endian_swap( (unsigned int *)&vals[0] ); //north vector: roll
+	endian_swap( (unsigned int *)&vals[1] ); //north vector: pitch
+	endian_swap( (unsigned int *)&vals[2] ); //north vector: yaw
+	endian_swap( (unsigned int *)&vals[3] ); //gravity vector: roll
+        endian_swap( (unsigned int *)&vals[4] ); //gravity vector: pitch
+        endian_swap( (unsigned int *)&vals[5] ); //gravity vector: yaw
+
+	return TSS_USB_SUCCESS;
+}
+
+
+int tss_get_north_vector_sensor ( const int tssd, float vals[6] )
+{
+	#ifndef NO_FLUSH_BUFFER
+	// Clear Response Buffer
+	tcflush( tss_usb_list[tssd]->fd, TCIOFLUSH );
+	#endif
+
+	// Construct Packet Payload
+	unsigned char buf[3] = { CMD_HEADER, CMD_READ_UNTARED_NORTH_VECTOR_SENSOR_FRAME, CMD_READ_UNTARED_NORTH_VECTOR_SENSOR_FRAME };
+	int ret;
+
+	if( ( ret = send_cmd( tss_usb_list[tssd]->fd, buf, sizeof( buf ) ) ) < 0 )
+		return ret;
+
+	// Read Response
+	if( ( ret = read_data( tss_usb_list[tssd]->fd, (unsigned char *)vals, 6 * sizeof( float ) ) ) < 0 )
+		return ret;
+
+	endian_swap( (unsigned int *)&vals[0] ); //north vector: roll
+	endian_swap( (unsigned int *)&vals[1] ); //north vector: pitch
+	endian_swap( (unsigned int *)&vals[2] ); //north vector: yaw
+	endian_swap( (unsigned int *)&vals[3] ); //gravity vector: roll
+        endian_swap( (unsigned int *)&vals[4] ); //gravity vector: pitch
+        endian_swap( (unsigned int *)&vals[5] ); //gravity vector: yaw
+
+	return TSS_USB_SUCCESS;
+}
+
 
 int tss_get_filtered_gyro( const int tssd, float vals[3] )
 {

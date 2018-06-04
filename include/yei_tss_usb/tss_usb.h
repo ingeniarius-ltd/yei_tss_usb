@@ -85,6 +85,7 @@ int tss_get_led( const int tssd, float vals[3] );
 int tss_set_led( const int tssd, const float vals[3] );
 
 int tss_get_orientation_quaternion( const int tssd, float vals[4] );
+int tss_get_absolute_orientation_quaternion( const int tssd, float vals[4] );
 int tss_get_filtered_gyro( const int tssd, float vals[3] );
 int tss_get_accel( const int tssd, float vals[3] );
 int tss_get_covariance( const int tssd, float vals[16] );
@@ -100,6 +101,9 @@ int tss_set_multi_reference_vectors( const int tssd );
 int tss_set_reference_mode( const int tssd, const unsigned char val );
 int tss_get_temperature_c( const int tssd, float *val );
 int tss_read_compass( const int tssd, float vals[3] );
+
+int tss_get_north_vector_global ( const int tssd, float vals[6] );
+int tss_get_north_vector_sensor ( const int tssd, float vals[6] );
 
 #ifdef __cplusplus
 }

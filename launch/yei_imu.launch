@@ -8,6 +8,10 @@
                 <param name="orientation_covariance"         value="0.000304607"/>  <!-- (0.017453)² -->
                 <param name="angular_velocity_covariance"    value="0.001164"/>     <!-- (0.0667 x PI/180)² -->
                 <param name="linear_acceleration_covariance" value="0.00002401"/>   <!-- (0.0049)² -->
+
+                <param name="invert_x_axis" value="true"/> 
+                <param name="invert_y_axis" value="false"/>  
+                <param name="invert_z_axis" value="false"/> 
                 
                 <remap from="imu/data"    to="yei_imu/data"/>
                 <remap from="imu/mag"     to="yei_imu/mag"/>
